@@ -384,6 +384,11 @@ class TelegramBot extends EventEmitter {
   }
 
   command(cmd, handler) {
+    if (handler === undefined) {
+      const commandName = typeof cmd === "string" ? (cmd.startsWith("/") ? cmd : `/${cmd}`) : ""
+      return this.commands.get(commandName)
+    }
+
     if (typeof handler !== "function") {
       throw new Error("Command handler must be a function")
     }
@@ -595,8 +600,26 @@ class TelegramBot extends EventEmitter {
 
   _createContext(update) {
     const message = update.message || update.edited_message || update.channel_post || update.callback_query?.message
-    const chat = message?.chat || update.my_chat_member?.chat || update.chat_member?.chat
-    const from = message?.from || update.callback_query?.from || update.inline_query?.from
+
+    // Fallback logic for chat extraction from various update types
+    const chat =
+      update.message?.chat ||
+      update.callback_query?.message?.chat ||
+      update.my_chat_member?.chat ||
+      update.chat_member?.chat ||
+      update.chat_join_request?.chat ||
+      update.edited_message?.chat ||
+      update.channel_post?.chat
+
+    const from =
+      update.message?.from ||
+      update.callback_query?.from ||
+      update.inline_query?.from ||
+      update.chosen_inline_result?.from ||
+      update.shipping_query?.from ||
+      update.pre_checkout_query?.from ||
+      update.poll_answer?.user ||
+      update.my_chat_member?.from
 
     const ctx = {
       update,
@@ -615,17 +638,26 @@ class TelegramBot extends EventEmitter {
 
     // Baileys-style simplified response
     ctx.send = (content, opts) => {
-      if (!ctx.chat?.id) {
-        throw new Error("[Teh] Cannot send message: chat_id is not available in this context")
+      const chatId =
+        ctx.chat?.id ||
+        update.callback_query?.from?.id ||
+        update.inline_query?.from?.id ||
+        update.message?.from?.id ||
+        from?.id
+
+      if (!chatId) {
+        console.error("[v0] Context update without valid chatId destination:", JSON.stringify(update))
+        throw new Error("[Teh] Cannot send message: chat_id could not be resolved from this update context")
       }
-      return this.sendMessage(ctx.chat.id, content, opts)
+      return this.sendMessage(chatId, content, opts)
     }
 
     ctx.reply = (text, opts) => {
-      if (!ctx.chat?.id) {
-        throw new Error("[Teh] Cannot reply: chat_id is not available in this context")
+      const chatId = ctx.chat?.id || update.callback_query?.from?.id || from?.id
+      if (!chatId) {
+        throw new Error("[Teh] Cannot reply: chat_id could not be resolved from this update context")
       }
-      return this.sendMessage(ctx.chat.id, text, {
+      return this.sendMessage(chatId, text, {
         reply_to_message_id: ctx.message?.message_id,
         ...opts,
       })

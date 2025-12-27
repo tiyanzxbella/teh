@@ -1,6 +1,6 @@
 {
   "name": "teh-bot",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Lightweight, high-performance Telegram Bot API module with zero dependencies",
   "keywords": [
     "telegram",
