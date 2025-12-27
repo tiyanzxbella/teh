@@ -1,0 +1,36 @@
+{
+  "name": "@mkzz/teh",
+  "version": "1.0.0",
+  "description": "Lightweight, high-performance Telegram Bot API module with zero dependencies",
+  "keywords": [
+    "telegram",
+    "bot",
+    "api",
+    "telegram-bot",
+    "telegram-bot-api",
+    "lightweight",
+    "polling"
+  ],
+  "homepage": "https://github.com/kazedevid/teh#readme",
+  "bugs": {
+    "url": "https://github.com/kazedevid/teh/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kazedevid/teh.git"
+  },
+  "license": "MIT",
+  "author": "KazeDevID",
+  "type": "commonjs",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
