@@ -65,7 +65,7 @@ class TelegramBot extends EventEmitter {
         method: "POST",
         headers: {
           ...headers,
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36",
+          "User-Agent": "TehBot/1.0.0 (Modern; High-Performance)",
         },
         timeout: this.options.requestTimeout,
       }
@@ -117,50 +117,13 @@ class TelegramBot extends EventEmitter {
     if (!mediaType) return this.request("sendMessage", { chat_id: chatId, text: content.text, ...options })
 
     const method = `send${mediaType.charAt(0).toUpperCase() + mediaType.slice(1)}`
-    const formData = { chat_id: chatId, caption, ...rest }
+    const formData = { chat_id: chatId, caption, [mediaType]: await this._prepareFile(mediaSource, mediaType), ...rest }
 
-    if (
-      mediaSource instanceof Stream ||
-      Buffer.isBuffer(mediaSource) ||
-      (typeof mediaSource === "string" && !mediaSource.startsWith("http"))
-    ) {
-      formData[mediaType] = await this._prepareFile(mediaSource, mediaType)
-      return this.request(method, {}, formData)
-    }
-
-    formData[mediaType] = mediaSource
-    return this.request(method, formData)
+    return this.request(method, {}, formData)
   }
 
   async sendPhoto(chatId, photo, options = {}) {
-    if (typeof photo === "string" && (photo.startsWith("http") || photo.startsWith("/"))) {
-      if (photo.startsWith("http")) {
-        return this.request("sendPhoto", {
-          chat_id: chatId,
-          photo,
-          ...options,
-        })
-      } else {
-        const fileData = await this._readFileSync(photo)
-        const formData = {
-          chat_id: chatId,
-          photo: {
-            stream: true,
-            filename: basename(photo),
-            contentType: "image/jpeg",
-            data: fileData,
-          },
-          ...this._flattenOptions(options),
-        }
-        return this.request("sendPhoto", {}, formData)
-      }
-    } else {
-      return this.request("sendPhoto", {
-        chat_id: chatId,
-        photo,
-        ...options,
-      })
-    }
+    return this._sendFile("sendPhoto", chatId, photo, "photo", options)
   }
 
   async sendAudio(chatId, audio, options = {}) {
@@ -754,7 +717,28 @@ class TelegramBot extends EventEmitter {
   async _prepareFile(source, type) {
     if (source instanceof Stream) return { data: source, contentType: this._getMime(type) }
     if (Buffer.isBuffer(source)) return { data: source, contentType: this._getMime(type) }
+
     if (typeof source === "string") {
+      if (source.startsWith("http")) {
+        // Fetch remote URL and return as stream
+        return new Promise((resolve, reject) => {
+          const client = source.startsWith("https") ? https : http
+          client
+            .get(source, (res) => {
+              if (res.statusCode !== 200) {
+                return reject(new Error(`Failed to fetch remote file: ${res.statusCode}`))
+              }
+              resolve({
+                data: res,
+                filename: basename(new URL(source).pathname) || `file_${Date.now()}`,
+                contentType: res.headers["content-type"] || this._getMime(type),
+              })
+            })
+            .on("error", reject)
+        })
+      }
+
+      // Local file
       return {
         data: createReadStream(source),
         filename: basename(source),
@@ -774,6 +758,18 @@ class TelegramBot extends EventEmitter {
       ".mp4": "video/mp4",
     }
     return mimes[ext] || "application/octet-stream"
+  }
+
+  _flattenOptions(options) {
+    const flat = {}
+    for (const [key, value] of Object.entries(options)) {
+      if (typeof value === "object" && value !== null) {
+        flat[key] = JSON.stringify(value)
+      } else {
+        flat[key] = value
+      }
+    }
+    return flat
   }
 
   _formatError(resp) {
@@ -798,6 +794,24 @@ class TelegramBot extends EventEmitter {
 
   async getWebhookInfo() {
     return this.request("getWebhookInfo")
+  }
+
+  static InlineKeyboard() {
+    return new InlineKeyboardBuilder()
+  }
+
+  static ReplyKeyboard() {
+    return new ReplyKeyboardBuilder()
+  }
+
+  static RemoveKeyboard(selective = false) {
+    return { remove_keyboard: true, selective }
+  }
+
+  static ForceReply(selective = false, placeholder = "") {
+    const obj = { force_reply: true, selective }
+    if (placeholder) obj.input_field_placeholder = placeholder
+    return obj
   }
 }
 
