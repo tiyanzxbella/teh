@@ -19,6 +19,10 @@ const DEFAULT_OPTIONS = {
   baseApiUrl: "https://api.telegram.org",
 }
 
+/**
+ * Modern, High-Performance
+ * Inspired by Telegraf's robust system
+ */
 class TelegramBot extends EventEmitter {
   constructor(token, options = {}) {
     super()
