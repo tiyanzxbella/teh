@@ -2,9 +2,9 @@
 
 > High-performance, zero-dependency Telegram Bot API library for Node.js with full Bot API v9.3 support.
 
-[![npm version](https://img.shields.io/npm/v/tehbot-library.svg)](https://www.npmjs.com/package/tehbot-library)
+[![npm version](https://img.shields.io/npm/v/teh-bot.svg)](https://www.npmjs.com/package/teh-bot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node Version](https://img.shields.io/node/v/tehbot-library)](https://nodejs.org)
+[![Node Version](https://img.shields.io/node/v/teh-bot)](https://nodejs.org)
 [![API Version](https://img.shields.io/badge/Telegram%20Bot%20API-v9.3-blue)](https://core.telegram.org/bots/api)
 
 ## Features
@@ -22,19 +22,19 @@
 ## Installation
 
 ```bash
-npm install tehbot-library
+npm install teh-bot
 ```
 
 Or using yarn:
 
 ```bash
-yarn add tehbot-library
+yarn add teh-bot
 ```
 
 ## Quick Start
 
 ```javascript
-const TelegramBot = require('tehbot-library');
+const TelegramBot = require('teh-bot');
 
 const bot = new TelegramBot('YOUR_BOT_TOKEN', {
   polling: true
@@ -233,7 +233,7 @@ await bot.copyMessage(toChatId, fromChatId, messageId);
 ### Inline Keyboards
 
 ```javascript
-const { InlineKeyboardBuilder } = require('tehbot-library');
+const { InlineKeyboardBuilder } = require('teh-bot');
 
 const keyboard = new InlineKeyboardBuilder()
   .text('Button 1', 'callback_1')
@@ -260,7 +260,7 @@ bot.on('callback_query', async (query, ctx) => {
 ### Reply Keyboards
 
 ```javascript
-const { ReplyKeyboardBuilder } = require('tehbot-library');
+const { ReplyKeyboardBuilder } = require('teh-bot');
 
 const keyboard = new ReplyKeyboardBuilder()
   .text('Option 1')
