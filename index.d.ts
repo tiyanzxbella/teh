@@ -12,6 +12,7 @@ export interface BotOptions {
   maxConnections?: number
   allowedUpdates?: string[]
   baseApiUrl?: string
+  apiVersion?: string
 }
 
 export interface User {
@@ -21,6 +22,7 @@ export interface User {
   last_name?: string
   username?: string
   language_code?: string
+  has_topics_enabled?: boolean
 }
 
 export interface Chat {
@@ -75,6 +77,12 @@ export interface Message {
   migrate_to_chat_id?: number
   migrate_from_chat_id?: number
   pinned_message?: Message
+  message_thread_id?: number
+  is_topic_message?: boolean
+  gift_upgrade_sent?: GiftUpgrade
+  invoice?: Invoice
+  successful_payment?: SuccessfulPayment
+  refunded_payment?: RefundedPayment
 }
 
 export interface MessageEntity {
@@ -234,6 +242,8 @@ export interface Update {
   poll_answer?: PollAnswer
   my_chat_member?: ChatMemberUpdated
   chat_member?: ChatMemberUpdated
+  shipping_query?: ShippingQuery
+  pre_checkout_query?: PreCheckoutQuery
 }
 
 export interface InlineQuery {
@@ -369,6 +379,7 @@ export interface SendMessageOptions {
   reply_to_message_id?: number
   allow_sending_without_reply?: boolean
   reply_markup?: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply
+  message_thread_id?: number
 }
 
 export interface SendPhotoOptions extends SendMessageOptions {
@@ -407,6 +418,8 @@ export interface Context {
   chat?: Chat
   from?: User
   chatId?: number
+  shippingQuery?: ShippingQuery
+  preCheckoutQuery?: PreCheckoutQuery
   send: (content: string | SendMediaContent, options?: any) => Promise<Message>
   reply: (text: string, options?: any) => Promise<Message>
   replyWithPhoto: (photo: string | Buffer, options?: SendPhotoOptions) => Promise<Message>
@@ -480,7 +493,7 @@ export class TelegramBot extends EventEmitter {
   sendContact(chatId: number | string, phoneNumber: string, firstName: string, options?: any): Promise<Message>
   sendPoll(chatId: number | string, question: string, options: string[], params?: any): Promise<Message>
   sendDice(chatId: number | string, options?: any): Promise<Message>
-  sendChatAction(chatId: number | string, action: string): Promise<boolean>
+  sendChatAction(chatId: number | string, action: string, options?: any): Promise<boolean>
 
   forwardMessage(
     chatId: number | string,
@@ -520,12 +533,59 @@ export class TelegramBot extends EventEmitter {
   downloadFile(fileId: string, destination: string): Promise<string>
 
   use(middleware: Middleware): this
-  command(cmd: string | string[], handler: CommandHandler): this
+  command(cmd: string | string[], handler?: CommandHandler): this | CommandHandler | undefined
 
   startPolling(): Promise<void>
   stopPolling(): void
   startWebhook(): Promise<void>
   stopWebhook(): void
+
+  sendMessageDraft(chatId: number | string, text: string, options?: any): Promise<any>
+  getUserGifts(userId: number, options?: any): Promise<Gift[]>
+  getChatGifts(chatId: number | string, options?: any): Promise<Gift[]>
+  editForumTopic(chatId: number | string, messageThreadId: number, options?: any): Promise<boolean>
+  deleteForumTopic(chatId: number | string, messageThreadId: number): Promise<boolean>
+  unpinAllForumTopicMessages(chatId: number | string, messageThreadId: number): Promise<boolean>
+  setMyCommands(commands: BotCommand[], options?: any): Promise<boolean>
+  getMyCommands(options?: any): Promise<BotCommand[]>
+  setChatMenuButton(options?: any): Promise<boolean>
+  getChatMenuButton(options?: any): Promise<MenuButton>
+  getUserProfilePhotos(userId: number, options?: any): Promise<UserProfilePhotos>
+  createChatInviteLink(chatId: number | string, options?: any): Promise<ChatInviteLink>
+  revokeChatInviteLink(chatId: number | string, inviteLink: string): Promise<ChatInviteLink>
+
+  sendInvoice(
+    chatId: number | string,
+    title: string,
+    description: string,
+    payload: string,
+    providerToken: string,
+    currency: string,
+    prices: LabeledPrice[],
+    options?: SendInvoiceOptions,
+  ): Promise<Message>
+  createInvoiceLink(
+    title: string,
+    description: string,
+    payload: string,
+    providerToken: string,
+    currency: string,
+    prices: LabeledPrice[],
+    options?: Omit<SendInvoiceOptions, "reply_markup" | "reply_to_message_id" | "message_thread_id">,
+  ): Promise<string>
+  answerShippingQuery(
+    shippingQueryId: string,
+    ok: boolean,
+    options?: { shipping_options?: ShippingOption[]; error_message?: string },
+  ): Promise<boolean>
+  answerPreCheckoutQuery(
+    preCheckoutQueryId: string,
+    ok: boolean,
+    options?: { error_message?: string },
+  ): Promise<boolean>
+  getStarTransactions(options?: { offset?: number; limit?: number }): Promise<StarTransaction[]>
+  refundStarPayment(userId: number, telegramPaymentChargeId: string): Promise<boolean>
+  editUserStarSubscription(userId: number, telegramPaymentChargeId: string, isCanceled: boolean): Promise<boolean>
 
   on(event: "update", listener: (update: Update) => void): this
   on(event: "message", listener: (message: Message, ctx: Context) => void): this
@@ -548,6 +608,10 @@ export class TelegramBot extends EventEmitter {
   on(event: "poll_answer", listener: (answer: PollAnswer, ctx: Context) => void): this
   on(event: "my_chat_member", listener: (member: ChatMemberUpdated, ctx: Context) => void): this
   on(event: "chat_member", listener: (member: ChatMemberUpdated, ctx: Context) => void): this
+  on(event: "successful_payment", listener: (payment: SuccessfulPayment, ctx: Context) => void): this
+  on(event: "refunded_payment", listener: (payment: RefundedPayment, ctx: Context) => void): this
+  on(event: "shipping_query", listener: (query: ShippingQuery, ctx: Context) => void): this
+  on(event: "pre_checkout_query", listener: (query: PreCheckoutQuery, ctx: Context) => void): this
   on(event: "polling_start", listener: () => void): this
   on(event: "polling_stop", listener: () => void): this
   on(event: "polling_error", listener: (error: Error) => void): this
@@ -561,6 +625,228 @@ export class TelegramBot extends EventEmitter {
   static ReplyKeyboard(): ReplyKeyboardBuilder
   static RemoveKeyboard(): ReplyKeyboardRemove
   static ForceReply(): ForceReply
+}
+
+export interface Gift {
+  id: string
+  sticker: Sticker
+  star_count: number
+  total_count?: number
+  remaining_count?: number
+  personal_total_count?: number
+  personal_remaining_count?: number
+  is_premium?: boolean
+  has_colors?: boolean
+  unique_gift_variant_count?: number
+  background?: GiftBackground
+}
+
+export interface GiftBackground {
+  type: string
+  colors?: string[]
+  gradient_angle?: number
+}
+
+export interface UniqueGift {
+  id: string
+  gift_id: string
+  unique_gift_number?: number
+  sticker?: Sticker
+  star_count?: number
+  owner_id?: number
+  owner_name?: string
+  is_from_blockchain?: boolean
+  is_premium?: boolean
+  colors?: UniqueGiftColors
+}
+
+export interface UniqueGiftColors {
+  background_color: string
+  pattern_color: string
+  text_color: string
+}
+
+export interface UniqueGiftInfo {
+  gift_id: string
+  unique_gift_number: number
+  origin?: string
+  last_resale_currency?: string
+  last_resale_amount?: number
+}
+
+export interface GiftUpgrade {
+  gift_id: string
+  from_user?: User
+}
+
+export interface OwnedGiftRegular {
+  gift_id: string
+  count: number
+  unique_gift_number?: number
+}
+
+export interface AcceptedGiftTypes {
+  gifts_from_users?: boolean
+  gifts_from_channels?: boolean
+}
+
+export interface ForumTopic {
+  message_thread_id: number
+  name: string
+  icon_color: number
+  icon_custom_emoji_id?: string
+  is_name_implicit?: boolean
+}
+
+export interface ForumTopicCreated {
+  name: string
+  icon_color: number
+  icon_custom_emoji_id?: string
+  is_name_implicit?: boolean
+}
+
+export interface ForumTopicEdited {
+  name?: string
+  icon_custom_emoji_id?: string
+}
+
+export interface ForumTopicClosed {}
+
+export interface ForumTopicReopened {}
+
+export interface BotCommand {
+  command: string
+  description: string
+}
+
+export interface MenuButton {
+  type: string
+  text?: string
+  web_app?: WebAppInfo
+}
+
+export interface WebAppInfo {
+  url: string
+}
+
+export interface UserProfilePhotos {
+  total_count: number
+  photos: PhotoSize[][]
+}
+
+export interface LabeledPrice {
+  label: string
+  amount: number
+}
+
+export interface Invoice {
+  title: string
+  description: string
+  start_parameter: string
+  currency: string
+  total_amount: number
+}
+
+export interface ShippingAddress {
+  country_code: string
+  state: string
+  city: string
+  street_line1: string
+  street_line2: string
+  post_code: string
+}
+
+export interface OrderInfo {
+  name?: string
+  phone_number?: string
+  email?: string
+  shipping_address?: ShippingAddress
+}
+
+export interface ShippingOption {
+  id: string
+  title: string
+  prices: LabeledPrice[]
+}
+
+export interface SuccessfulPayment {
+  currency: string
+  total_amount: number
+  invoice_payload: string
+  shipping_option_id?: string
+  order_info?: OrderInfo
+  telegram_payment_charge_id: string
+  provider_payment_charge_id: string
+}
+
+export interface RefundedPayment {
+  currency: string
+  total_amount: number
+  invoice_payload: string
+  telegram_payment_charge_id: string
+  provider_payment_charge_id?: string
+}
+
+export interface ShippingQuery {
+  id: string
+  from: User
+  invoice_payload: string
+  shipping_address: ShippingAddress
+}
+
+export interface PreCheckoutQuery {
+  id: string
+  from: User
+  currency: string
+  total_amount: number
+  invoice_payload: string
+  shipping_option_id?: string
+  order_info?: OrderInfo
+}
+
+export interface StarTransaction {
+  id: string
+  amount: number
+  date: number
+  source?: TransactionPartner
+  receiver?: TransactionPartner
+}
+
+export interface TransactionPartner {
+  type: string
+  user?: User
+  withdrawal_state?: RevenueWithdrawalState
+  invoice_payload?: string
+}
+
+export interface RevenueWithdrawalState {
+  type: string
+  date?: number
+  url?: string
+}
+
+export interface SendInvoiceOptions {
+  message_thread_id?: number
+  max_tip_amount?: number
+  suggested_tip_amounts?: number[]
+  start_parameter?: string
+  provider_data?: string
+  photo_url?: string
+  photo_size?: number
+  photo_width?: number
+  photo_height?: number
+  need_name?: boolean
+  need_phone_number?: boolean
+  need_email?: boolean
+  need_shipping_address?: boolean
+  send_phone_number_to_provider?: boolean
+  send_email_to_provider?: boolean
+  is_flexible?: boolean
+  disable_notification?: boolean
+  protect_content?: boolean
+  reply_to_message_id?: number
+  allow_sending_without_reply?: boolean
+  reply_markup?: InlineKeyboardMarkup
 }
 
 export default TelegramBot

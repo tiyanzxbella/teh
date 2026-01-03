@@ -5,6 +5,7 @@ const { createReadStream, statSync, createWriteStream, promises: fsPromises } = 
 const { basename, extname } = require("path")
 const { URL } = require("url")
 const { Stream, Readable } = require("stream")
+const FormData = require("form-data")
 
 const DEFAULT_OPTIONS = {
   polling: false,
@@ -17,12 +18,9 @@ const DEFAULT_OPTIONS = {
   maxConnections: 40,
   allowedUpdates: [],
   baseApiUrl: "https://api.telegram.org",
+  apiVersion: "9.3",
 }
 
-/**
- * Modern, High-Performance
- * Inspired by Telegraf's robust system
- */
 class TelegramBot extends EventEmitter {
   constructor(token, options = {}) {
     super()
@@ -90,8 +88,14 @@ class TelegramBot extends EventEmitter {
       })
 
       req.on("error", reject)
-      if (body instanceof Stream) body.pipe(req)
-      else {
+      if (body instanceof Stream) {
+        body.pipe(req)
+        body.on("end", () => req.end())
+        body.on("error", (err) => {
+          req.destroy()
+          reject(err)
+        })
+      } else {
         req.write(body)
         req.end()
       }
@@ -203,10 +207,11 @@ class TelegramBot extends EventEmitter {
     })
   }
 
-  async sendChatAction(chatId, action) {
+  async sendChatAction(chatId, action, options = {}) {
     return this.request("sendChatAction", {
       chat_id: chatId,
       action,
+      ...options,
     })
   }
 
@@ -556,6 +561,14 @@ class TelegramBot extends EventEmitter {
         if (update.message.contact) {
           this.emit("contact", update.message, ctx)
         }
+
+        if (update.message.successful_payment) {
+          this.emit("successful_payment", update.message.successful_payment, ctx)
+        }
+
+        if (update.message.refunded_payment) {
+          this.emit("refunded_payment", update.message.refunded_payment, ctx)
+        }
       }
 
       if (update.edited_message) {
@@ -596,6 +609,14 @@ class TelegramBot extends EventEmitter {
 
       if (update.chat_member) {
         this.emit("chat_member", update.chat_member, ctx)
+      }
+
+      if (update.shipping_query) {
+        this.emit("shipping_query", update.shipping_query, ctx)
+      }
+
+      if (update.pre_checkout_query) {
+        this.emit("pre_checkout_query", update.pre_checkout_query, ctx)
       }
     } catch (error) {
       this.emit("error", error)
@@ -638,6 +659,8 @@ class TelegramBot extends EventEmitter {
       pollAnswer: update.poll_answer,
       myChatMember: update.my_chat_member,
       chatMember: update.chat_member,
+      shippingQuery: update.shipping_query,
+      preCheckoutQuery: update.pre_checkout_query,
     }
 
     // Baileys-style simplified response
@@ -650,7 +673,7 @@ class TelegramBot extends EventEmitter {
         from?.id
 
       if (!chatId) {
-        console.error("[v0] Context update without valid chatId destination:", JSON.stringify(update))
+        console.error("[Teh] Context update without valid chatId destination:", JSON.stringify(update))
         throw new Error("[Teh] Cannot send message: chat_id could not be resolved from this update context")
       }
       return this.sendMessage(chatId, content, opts)
@@ -697,6 +720,17 @@ class TelegramBot extends EventEmitter {
       })
     }
 
+    // Context helpers for payment
+    ctx.answerShippingQuery = (ok, options = {}) => {
+      if (!ctx.shippingQuery?.id) return Promise.resolve(false)
+      return this.answerShippingQuery(ctx.shippingQuery.id, ok, options)
+    }
+
+    ctx.answerPreCheckoutQuery = (ok, options = {}) => {
+      if (!ctx.preCheckoutQuery?.id) return Promise.resolve(false)
+      return this.answerPreCheckoutQuery(ctx.preCheckoutQuery.id, ok, options)
+    }
+
     return ctx
   }
 
@@ -720,54 +754,68 @@ class TelegramBot extends EventEmitter {
   }
 
   _buildMultipartStream(formData, boundary) {
-    const stream = new Readable({ read() {} })
+    const stream = new Readable({
+      read() {},
+    })
     const nl = "\r\n"
     ;(async () => {
-      for (const [key, value] of Object.entries(formData)) {
-        if (value === undefined || value === null) continue
+      try {
+        for (const [key, value] of Object.entries(formData)) {
+          if (value === undefined || value === null) continue
 
-        stream.push(`--${boundary}${nl}`)
-        if (value && typeof value === "object" && value.data) {
-          const filename = value.filename || `file_${Date.now()}`
-          stream.push(`Content-Disposition: form-data; name="${key}"; filename="${filename}"${nl}`)
-          stream.push(`Content-Type: ${value.contentType || "application/octet-stream"}${nl}${nl}`)
+          stream.push(`--${boundary}${nl}`)
+          if (value && typeof value === "object" && (value.data || value instanceof Stream || Buffer.isBuffer(value))) {
+            const fileData = value.data || value
+            const filename = value.filename || `file_${Date.now()}.jpg`
+            const contentType = value.contentType || this._getMime(extname(filename)) || "image/jpeg"
 
-          if (value.data instanceof Stream) {
-            for await (const chunk of value.data) stream.push(chunk)
+            stream.push(`Content-Disposition: form-data; name="${key}"; filename="${filename}"${nl}`)
+            stream.push(`Content-Type: ${contentType}${nl}${nl}`)
+
+            if (fileData instanceof Stream) {
+              for await (const chunk of fileData) {
+                const canPush = stream.push(chunk)
+                if (!canPush) {
+                  await new Promise((resolve) => stream.once("drain", resolve))
+                }
+              }
+            } else {
+              stream.push(fileData)
+            }
           } else {
-            stream.push(value.data)
+            stream.push(`Content-Disposition: form-data; name="${key}"${nl}${nl}`)
+            stream.push(typeof value === "object" ? JSON.stringify(value) : String(value))
           }
-        } else {
-          stream.push(`Content-Disposition: form-data; name="${key}"${nl}${nl}`)
-          stream.push(typeof value === "object" ? JSON.stringify(value) : String(value))
+          stream.push(nl)
         }
-        stream.push(nl)
+        stream.push(`--${boundary}--${nl}`)
+      } catch (err) {
+        console.error("[Teh] Error building multipart stream:", err)
+      } finally {
+        stream.push(null)
       }
-      stream.push(`--${boundary}--${nl}`)
-      stream.push(null)
     })()
 
     return stream
   }
 
   async _prepareFile(source, type) {
-    if (source instanceof Stream) return { data: source, contentType: this._getMime(type) }
-    if (Buffer.isBuffer(source)) return { data: source, contentType: this._getMime(type) }
+    const defaultMime = this._getMime(type) || "image/jpeg"
+
+    if (source instanceof Stream) return { data: source, contentType: defaultMime }
+    if (Buffer.isBuffer(source)) return { data: source, contentType: defaultMime }
 
     if (typeof source === "string") {
       if (source.startsWith("http")) {
-        // Fetch remote URL and return as stream
         return new Promise((resolve, reject) => {
-          const client = source.startsWith("https") ? https : http
-          client
+          https
             .get(source, (res) => {
-              if (res.statusCode !== 200) {
-                return reject(new Error(`Failed to fetch remote file: ${res.statusCode}`))
-              }
+              const filename = basename(new URL(source).pathname) || `file_${Date.now()}.jpg`
+              const contentType = res.headers["content-type"] || defaultMime
               resolve({
                 data: res,
-                filename: basename(new URL(source).pathname) || `file_${Date.now()}`,
-                contentType: res.headers["content-type"] || this._getMime(type),
+                filename: filename,
+                contentType: contentType,
               })
             })
             .on("error", reject)
@@ -775,25 +823,34 @@ class TelegramBot extends EventEmitter {
       }
 
       // Local file
+      const filename = basename(source)
       return {
         data: createReadStream(source),
-        filename: basename(source),
-        contentType: this._getMime(extname(source)),
+        filename: filename,
+        contentType: this._getMime(extname(filename)) || defaultMime,
       }
     }
     return source
   }
 
-  _getMime(ext) {
+  _getMime(extOrType) {
     const mimes = {
       photo: "image/jpeg",
+      image: "image/jpeg",
       video: "video/mp4",
       audio: "audio/mpeg",
+      document: "application/octet-stream",
       ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
       ".png": "image/png",
+      ".gif": "image/gif",
       ".mp4": "video/mp4",
+      ".mp3": "audio/mpeg",
+      ".pdf": "application/pdf",
+      ".zip": "application/zip",
     }
-    return mimes[ext] || "application/octet-stream"
+    const key = extOrType?.toLowerCase()
+    return mimes[key] || (key?.startsWith(".") ? "application/octet-stream" : mimes.photo)
   }
 
   _flattenOptions(options) {
@@ -832,22 +889,108 @@ class TelegramBot extends EventEmitter {
     return this.request("getWebhookInfo")
   }
 
-  static InlineKeyboard() {
-    return new InlineKeyboardBuilder()
+  async getMe() {
+    return this.request("getMe")
   }
 
-  static ReplyKeyboard() {
-    return new ReplyKeyboardBuilder()
+  async _sendFile(method, chatId, source, type, options = {}) {
+    const formData = {
+      chat_id: chatId,
+      [type]: await this._prepareFile(source, type),
+      ...this._flattenOptions(options),
+    }
+    return this.request(method, {}, formData)
   }
 
-  static RemoveKeyboard(selective = false) {
-    return { remove_keyboard: true, selective }
+  async setMyCommands(commands, options = {}) {
+    return this.request("setMyCommands", { commands, ...options })
   }
 
-  static ForceReply(selective = false, placeholder = "") {
-    const obj = { force_reply: true, selective }
-    if (placeholder) obj.input_field_placeholder = placeholder
-    return obj
+  async getMyCommands(options = {}) {
+    return this.request("getMyCommands", options)
+  }
+
+  async setChatMenuButton(options = {}) {
+    return this.request("setChatMenuButton", options)
+  }
+
+  async getChatMenuButton(options = {}) {
+    return this.request("getChatMenuButton", options)
+  }
+
+  async getUserProfilePhotos(userId, options = {}) {
+    return this.request("getUserProfilePhotos", { user_id: userId, ...options })
+  }
+
+  async createChatInviteLink(chatId, options = {}) {
+    return this.request("createChatInviteLink", { chat_id: chatId, ...options })
+  }
+
+  async revokeChatInviteLink(chatId, inviteLink) {
+    return this.request("revokeChatInviteLink", {
+      chat_id: chatId,
+      invite_link: inviteLink,
+    })
+  }
+
+  async sendInvoice(chatId, title, description, payload, providerToken, currency, prices, options = {}) {
+    return this.request("sendInvoice", {
+      chat_id: chatId,
+      title,
+      description,
+      payload,
+      provider_token: providerToken,
+      currency,
+      prices,
+      ...options,
+    })
+  }
+
+  async createInvoiceLink(title, description, payload, providerToken, currency, prices, options = {}) {
+    return this.request("createInvoiceLink", {
+      title,
+      description,
+      payload,
+      provider_token: providerToken,
+      currency,
+      prices,
+      ...options,
+    })
+  }
+
+  async answerShippingQuery(shippingQueryId, ok, options = {}) {
+    return this.request("answerShippingQuery", {
+      shipping_query_id: shippingQueryId,
+      ok,
+      ...options,
+    })
+  }
+
+  async answerPreCheckoutQuery(preCheckoutQueryId, ok, options = {}) {
+    return this.request("answerPreCheckoutQuery", {
+      pre_checkout_query_id: preCheckoutQueryId,
+      ok,
+      ...options,
+    })
+  }
+
+  async getStarTransactions(options = {}) {
+    return this.request("getStarTransactions", options)
+  }
+
+  async refundStarPayment(userId, telegramPaymentChargeId) {
+    return this.request("refundStarPayment", {
+      user_id: userId,
+      telegram_payment_charge_id: telegramPaymentChargeId,
+    })
+  }
+
+  async editUserStarSubscription(userId, telegramPaymentChargeId, isCanceled) {
+    return this.request("editUserStarSubscription", {
+      user_id: userId,
+      telegram_payment_charge_id: telegramPaymentChargeId,
+      is_canceled: isCanceled,
+    })
   }
 }
 
