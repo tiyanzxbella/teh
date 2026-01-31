@@ -924,7 +924,9 @@ class InlineKeyboardBuilder {
   }
 
   build() {
-    return { inline_keyboard: this.keyboard }
+    return {
+      inline_keyboard: this.keyboard,
+    }
   }
 }
 
@@ -935,7 +937,9 @@ class ReplyKeyboardBuilder {
   }
 
   text(text) {
-    this.keyboard[this.keyboard.length - 1].push({ text })
+    this.keyboard[this.keyboard.length - 1].push({
+      text,
+    })
     return this
   }
 

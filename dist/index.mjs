@@ -1,7 +1,7 @@
 import https from "https"
 import http from "http"
 import { EventEmitter } from "events"
-import { createReadStream, statSync, createWriteStream, promises: fsPromises } from "fs"
+import { createReadStream, statSync, createWriteStream, promises as fsPromises } from "fs"
 import { basename, extname } from "path"
 import { URL } from "url"
 import { Stream, Readable } from "stream"
@@ -924,7 +924,9 @@ class InlineKeyboardBuilder {
   }
 
   build() {
-    return { inline_keyboard: this.keyboard }
+    return {
+      inline_keyboard: this.keyboard,
+    }
   }
 }
 
@@ -935,7 +937,9 @@ class ReplyKeyboardBuilder {
   }
 
   text(text) {
-    this.keyboard[this.keyboard.length - 1].push({ text })
+    this.keyboard[this.keyboard.length - 1].push({
+      text,
+    })
     return this
   }
 
@@ -997,6 +1001,4 @@ class ReplyKeyboardBuilder {
 }
 
 export default TelegramBot
-export { TelegramBot as TelegramBot }
-export { InlineKeyboardBuilder as InlineKeyboardBuilder }
-export { ReplyKeyboardBuilder as ReplyKeyboardBuilder }
+export { TelegramBot, InlineKeyboardBuilder, ReplyKeyboardBuilder }

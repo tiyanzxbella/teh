@@ -1,5 +1,5 @@
 import { EventEmitter } from "events"
-import type { ReadableStream, Stream } from "stream"
+import type { ReadableStream } from "stream"
 
 export interface BotOptions {
   polling?: boolean
@@ -21,12 +21,6 @@ export interface User {
   last_name?: string
   username?: string
   language_code?: string
-  is_premium?: boolean
-  added_to_attachment_menu?: boolean
-  can_join_groups?: boolean
-  can_read_all_group_messages?: boolean
-  supports_inline_queries?: boolean
-  can_connect_to_business?: boolean
 }
 
 export interface Chat {
@@ -36,58 +30,12 @@ export interface Chat {
   username?: string
   first_name?: string
   last_name?: string
-  is_forum?: boolean
-  photo?: ChatPhoto
-  bio?: string
-  description?: string
-  invite_link?: string
-  pinned_message?: Message
-  permissions?: ChatPermissions
-  slow_mode_delay?: number
-  message_auto_delete_time?: number
-  has_protected_content?: boolean
-  sticker_set_name?: string
-  can_set_sticker_set?: boolean
-  linked_chat_id?: number
-  location?: ChatLocation
-  is_topic?: boolean
-}
-
-export interface ChatPhoto {
-  small_file_id: string
-  small_file_unique_id: string
-  big_file_id: string
-  big_file_unique_id: string
-}
-
-export interface ChatPermissions {
-  can_send_messages?: boolean
-  can_send_audios?: boolean
-  can_send_documents?: boolean
-  can_send_photos?: boolean
-  can_send_videos?: boolean
-  can_send_video_notes?: boolean
-  can_send_voice_notes?: boolean
-  can_send_polls?: boolean
-  can_send_other_messages?: boolean
-  can_add_web_page_previews?: boolean
-  can_change_info?: boolean
-  can_invite_users?: boolean
-  can_pin_messages?: boolean
-  can_manage_topics?: boolean
-}
-
-export interface ChatLocation {
-  location: Location
-  address: string
 }
 
 export interface Message {
   message_id: number
-  message_thread_id?: number
   from?: User
   sender_chat?: Chat
-  sender_boost_count?: number
   date: number
   chat: Chat
   forward_from?: User
@@ -96,37 +44,26 @@ export interface Message {
   forward_signature?: string
   forward_sender_name?: string
   forward_date?: number
-  is_topic_message?: boolean
-  is_automatic_forward?: boolean
   reply_to_message?: Message
-  external_reply_to_message?: ExternalReplyInfo
-  quote?: TextQuote
   via_bot?: User
   edit_date?: number
-  has_protected_content?: boolean
-  media_group_id?: string
-  author_signature?: string
   text?: string
   entities?: MessageEntity[]
-  link_preview_options?: LinkPreviewOptions
-  animation?: Animation
-  audio?: Audio
-  document?: Document
-  photo?: PhotoSize[]
-  sticker?: Sticker
-  story?: Story
-  video?: Video
-  video_note?: VideoNote
-  voice?: Voice
   caption?: string
   caption_entities?: MessageEntity[]
-  has_media_spoiler?: boolean
-  contact?: Contact
-  dice?: Dice
-  game?: Game
-  poll?: Poll
-  venue?: Venue
+  photo?: PhotoSize[]
+  audio?: Audio
+  document?: Document
+  animation?: Animation
+  video?: Video
+  voice?: Voice
+  video_note?: VideoNote
+  sticker?: Sticker
   location?: Location
+  venue?: Venue
+  contact?: Contact
+  poll?: Poll
+  dice?: Dice
   new_chat_members?: User[]
   left_chat_member?: User
   new_chat_title?: string
@@ -135,34 +72,9 @@ export interface Message {
   group_chat_created?: boolean
   supergroup_chat_created?: boolean
   channel_chat_created?: boolean
-  message_auto_delete_timer_changed?: MessageAutoDeleteTimerChanged
   migrate_to_chat_id?: number
   migrate_from_chat_id?: number
   pinned_message?: Message
-  invoice?: Invoice
-  successful_payment?: SuccessfulPayment
-  users_shared?: UsersShared
-  chat_shared?: ChatShared
-  connected_website?: string
-  write_access_allowed?: WriteAccessAllowed
-  passport_data?: PassportData
-  proximity_alert_triggered?: ProximityAlertTriggered
-  forum_topic_created?: ForumTopicCreated
-  forum_topic_edited?: ForumTopicEdited
-  forum_topic_closed?: ForumTopicClosed
-  forum_topic_reopened?: ForumTopicReopened
-  general_forum_topic_hidden?: GeneralForumTopicHidden
-  general_forum_topic_unhidden?: GeneralForumTopicUnhidden
-  giveaway_created?: GiveawayCreated
-  giveaway?: Giveaway
-  giveaway_winners?: GiveawayWinners
-  giveaway_completed?: GiveawayCompleted
-  video_chat_scheduled?: VideoChatScheduled
-  video_chat_started?: VideoChatStarted
-  video_chat_ended?: VideoChatEnded
-  video_chat_participants_invited?: VideoChatParticipantsInvited
-  web_app_data?: WebAppData
-  reply_markup?: InlineKeyboardMarkup
 }
 
 export interface MessageEntity {
@@ -172,60 +84,6 @@ export interface MessageEntity {
   url?: string
   user?: User
   language?: string
-  custom_emoji_id?: string
-}
-
-export interface TextQuote {
-  text: string
-  entities?: MessageEntity[]
-  position: number
-  is_manual?: boolean
-}
-
-export interface ExternalReplyInfo {
-  origin: MessageOrigin
-  chat?: Chat
-  message_id?: number
-  link_preview_options?: LinkPreviewOptions
-  animation?: Animation
-  audio?: Audio
-  document?: Document
-  photo?: PhotoSize[]
-  sticker?: Sticker
-  story?: Story
-  video?: Video
-  video_note?: VideoNote
-  voice?: Voice
-  has_media_spoiler?: boolean
-  contact?: Contact
-  dice?: Dice
-  game?: Game
-  giveaway?: Giveaway
-  giveaway_winners?: GiveawayWinners
-  invoice?: Invoice
-  location?: Location
-  poll?: Poll
-  venue?: Venue
-}
-
-export interface MessageOrigin {
-  type: string
-  date: number
-  user_id?: number
-  sender_user_id?: number
-  sender_user_name?: string
-  sender_chat?: Chat
-  author_signature?: string
-  chat?: Chat
-  message_id?: number
-}
-
-export interface LinkPreviewOptions {
-  is_disabled?: boolean
-  url?: string
-  prefer_small_media?: boolean
-  prefer_large_media?: boolean
-  show_above_text?: boolean
 }
 
 export interface PhotoSize {
@@ -299,7 +157,6 @@ export interface VideoNote {
 export interface Sticker {
   file_id: string
   file_unique_id: string
-  type: string
   width: number
   height: number
   is_animated: boolean
@@ -307,22 +164,8 @@ export interface Sticker {
   thumb?: PhotoSize
   emoji?: string
   set_name?: string
-  premium_animation?: File
   mask_position?: MaskPosition
-  custom_emoji_id?: string
   file_size?: number
-}
-
-export interface Story {
-  forward_from_chat_id?: number
-  forward_from_message_id?: number
-}
-
-export interface File {
-  file_id: string
-  file_unique_id: string
-  file_size?: number
-  file_path?: string
 }
 
 export interface MaskPosition {
@@ -347,8 +190,6 @@ export interface Venue {
   address: string
   foursquare_id?: string
   foursquare_type?: string
-  google_place_id?: string
-  google_place_type?: string
 }
 
 export interface Contact {
@@ -359,47 +200,25 @@ export interface Contact {
   vcard?: string
 }
 
-export interface Dice {
-  emoji: string
-  value: number
-}
-
-export interface Game {
-  title: string
-  description: string
-  photo: PhotoSize[]
-  text?: string
-  text_entities?: MessageEntity[]
-  animation?: Animation
-}
-
 export interface Poll {
   id: string
   question: string
-  question_entities?: MessageEntity[]
   options: PollOption[]
   total_voter_count: number
   is_closed: boolean
   is_anonymous: boolean
   type: string
   allows_multiple_answers: boolean
-  explanation?: string
-  explanation_entities?: MessageEntity[]
-  open_period?: number
-  close_date?: number
 }
 
 export interface PollOption {
   text: string
-  text_entities?: MessageEntity[]
   voter_count: number
-  is_chosen?: boolean
 }
 
-export interface PollAnswer {
-  poll_id: string
-  user: User
-  option_ids: number[]
+export interface Dice {
+  emoji: string
+  value: number
 }
 
 export interface Update {
@@ -408,49 +227,13 @@ export interface Update {
   edited_message?: Message
   channel_post?: Message
   edited_channel_post?: Message
-  message_reaction?: MessageReactionUpdated
-  message_reaction_count?: MessageReactionCountUpdated
   inline_query?: InlineQuery
   chosen_inline_result?: ChosenInlineResult
   callback_query?: CallbackQuery
-  shipping_query?: ShippingQuery
-  pre_checkout_query?: PreCheckoutQuery
   poll?: Poll
   poll_answer?: PollAnswer
   my_chat_member?: ChatMemberUpdated
   chat_member?: ChatMemberUpdated
-  chat_join_request?: ChatJoinRequest
-  chat_boost?: ChatBoostUpdated
-  removed_chat_boost?: ChatBoostRemoved
-}
-
-export interface MessageReactionUpdated {
-  chat: Chat
-  message_id: number
-  user?: User
-  actor_chat?: Chat
-  date: number
-  old_reaction: ReactionType[]
-  new_reaction: ReactionType[]
-}
-
-export interface MessageReactionCountUpdated {
-  chat: Chat
-  message_id: number
-  date: number
-  reactions: ReactionCount[]
-}
-
-export interface ReactionType {
-  type: string
-  emoji?: string
-  custom_emoji_id?: string
-}
-
-export interface ReactionCount {
-  type: ReactionType
-  total_count: number
-  recent_donators?: User[]
 }
 
 export interface InlineQuery {
@@ -480,37 +263,10 @@ export interface CallbackQuery {
   game_short_name?: string
 }
 
-export interface ShippingQuery {
-  id: string
-  from: User
-  invoice_payload: string
-  shipping_address: ShippingAddress
-}
-
-export interface ShippingAddress {
-  country_code: string
-  state: string
-  city: string
-  street_line1: string
-  street_line2: string
-  post_code: string
-}
-
-export interface PreCheckoutQuery {
-  id: string
-  from: User
-  currency: string
-  total_amount: number
-  invoice_payload: string
-  shipping_option_id?: string
-  order_info?: OrderInfo
-}
-
-export interface OrderInfo {
-  name?: string
-  phone_number?: string
-  email?: string
-  shipping_address?: ShippingAddress
+export interface PollAnswer {
+  poll_id: string
+  user: User
+  option_ids: number[]
 }
 
 export interface ChatMemberUpdated {
@@ -520,7 +276,6 @@ export interface ChatMemberUpdated {
   old_chat_member: ChatMember
   new_chat_member: ChatMember
   invite_link?: ChatInviteLink
-  via_chat_folder_invite_link?: boolean
 }
 
 export interface ChatMember {
@@ -539,15 +294,9 @@ export interface ChatMember {
   can_change_info?: boolean
   can_invite_users?: boolean
   can_pin_messages?: boolean
-  can_manage_topics?: boolean
   is_member?: boolean
   can_send_messages?: boolean
-  can_send_audios?: boolean
-  can_send_documents?: boolean
-  can_send_photos?: boolean
-  can_send_videos?: boolean
-  can_send_video_notes?: boolean
-  can_send_voice_notes?: boolean
+  can_send_media_messages?: boolean
   can_send_polls?: boolean
   can_send_other_messages?: boolean
   can_add_web_page_previews?: boolean
@@ -566,189 +315,6 @@ export interface ChatInviteLink {
   pending_join_request_count?: number
 }
 
-export interface ChatJoinRequest {
-  chat: Chat
-  from: User
-  user_chat_id: number
-  date: number
-  bio?: string
-  invite_link?: ChatInviteLink
-}
-
-export interface ChatBoostUpdated {
-  chat: Chat
-  boost: ChatBoost
-}
-
-export interface ChatBoost {
-  boost_id: string
-  user_id: number
-  expiration_date: number
-  start_date: number
-}
-
-export interface ChatBoostRemoved {
-  chat: Chat
-  boost_id: string
-  remove_date: number
-  source: ChatBoostSource
-}
-
-export interface ChatBoostSource {
-  source: string
-  user?: User
-}
-
-export interface VideoChatScheduled {
-  start_date: number
-}
-
-export interface VideoChatStarted {}
-
-export interface VideoChatEnded {
-  duration: number
-}
-
-export interface VideoChatParticipantsInvited {
-  users: User[]
-}
-
-export interface WebAppData {
-  data: string
-  button_text: string
-}
-
-export interface ProximityAlertTriggered {
-  traveler: User
-  watcher: User
-  distance: number
-}
-
-export interface MessageAutoDeleteTimerChanged {
-  message_auto_delete_time: number
-}
-
-export interface ForumTopicCreated {
-  name: string
-  icon_color: number
-  icon_custom_emoji_id?: string
-}
-
-export interface ForumTopicEdited {
-  name?: string
-  icon_custom_emoji_id?: string
-}
-
-export interface ForumTopicClosed {}
-
-export interface ForumTopicReopened {}
-
-export interface GeneralForumTopicHidden {}
-
-export interface GeneralForumTopicUnhidden {}
-
-export interface GiveawayCreated {
-  parameters?: GiveawayParameters
-}
-
-export interface Giveaway {
-  chats: Chat[]
-  winners_selection_date: number
-  winner_count: number
-  only_new_members?: boolean
-  has_public_winners?: boolean
-  prize_description?: string
-  country_codes?: string[]
-  premium_subscription_month_count?: number
-}
-
-export interface GiveawayWinners {
-  chat: Chat
-  giveaway_message_id: number
-  winners_selection_date: number
-  winner_count: number
-  winners: User[]
-  additional_chat_count?: number
-  premium_subscription_month_count?: number
-  unclaimed_prize_count?: number
-  only_new_members?: boolean
-  was_refunded?: boolean
-  prize_description?: string
-}
-
-export interface GiveawayCompleted {
-  winner_count: number
-  unclaimed_prize_count?: number
-  giveaway_message?: Message
-}
-
-export interface GiveawayParameters {
-  boosted_chat_id: number
-}
-
-export interface UsersShared {
-  request_id: number
-  user_ids: number[]
-}
-
-export interface ChatShared {
-  request_id: number
-  chat_id: number
-}
-
-export interface WriteAccessAllowed {
-  web_app_name?: string
-}
-
-export interface PassportData {
-  data: EncryptedPassportElement[]
-  credentials: EncryptedCredentials
-}
-
-export interface EncryptedPassportElement {
-  type: string
-  hash: string
-  data?: string
-  phone_number?: string
-  email?: string
-  files?: PassportFile[]
-  front_side?: PassportFile
-  reverse_side?: PassportFile
-  selfie?: PassportFile
-  translation?: PassportFile[]
-}
-
-export interface PassportFile {
-  file_id: string
-  file_unique_id: string
-  file_size: number
-  file_date: number
-}
-
-export interface EncryptedCredentials {
-  data: string
-  hash: string
-  secret: string
-}
-
-export interface Invoice {
-  title: string
-  description: string
-  start_parameter: string
-  currency: string
-  total_amount: number
-}
-
-export interface SuccessfulPayment {
-  currency: string
-  total_amount: number
-  invoice_payload: string
-  shipping_option_id?: string
-  order_info?: OrderInfo
-  telegram_payment_charge_id: string
-  provider_payment_charge_id: string
-}
-
 export interface InlineKeyboardMarkup {
   inline_keyboard: InlineKeyboardButton[][]
 }
@@ -757,89 +323,30 @@ export interface InlineKeyboardButton {
   text: string
   url?: string
   callback_data?: string
-  web_app?: WebAppInfo
-  login_url?: LoginUrl
   switch_inline_query?: string
   switch_inline_query_current_chat?: string
-  switch_inline_query_chosen_chat?: SwitchInlineQueryChosenChat
   callback_game?: any
   pay?: boolean
-}
-
-export interface WebAppInfo {
-  url: string
-}
-
-export interface LoginUrl {
-  url: string
-  forward_text?: string
-  bot_username?: string
-  request_write_access?: boolean
-}
-
-export interface SwitchInlineQueryChosenChat {
-  allow_user_chats?: boolean
-  allow_bot_chats?: boolean
-  allow_group_chats?: boolean
-  allow_channel_chats?: boolean
+  login_url?: any
 }
 
 export interface ReplyKeyboardMarkup {
   keyboard: KeyboardButton[][]
-  is_persistent?: boolean
   resize_keyboard?: boolean
   one_time_keyboard?: boolean
-  input_field_placeholder?: string
   selective?: boolean
+  input_field_placeholder?: string
 }
 
 export interface KeyboardButton {
   text: string
-  request_user?: KeyboardButtonRequestUser
-  request_chat?: KeyboardButtonRequestChat
   request_contact?: boolean
   request_location?: boolean
   request_poll?: KeyboardButtonPollType
-  request_location_access_denied?: boolean
-  web_app?: WebAppInfo
-}
-
-export interface KeyboardButtonRequestUser {
-  request_id: number
-  user_is_bot?: boolean
-  user_is_premium?: boolean
-  max_quantity?: number
-}
-
-export interface KeyboardButtonRequestChat {
-  request_id: number
-  chat_is_channel: boolean
-  chat_is_forum?: boolean
-  chat_is_group_n_supergroup?: boolean
-  chat_is_created?: boolean
-  user_administrator_rights?: ChatAdministratorRights
-  bot_administrator_rights?: ChatAdministratorRights
-  bot_is_member?: boolean
-  max_quantity?: number
 }
 
 export interface KeyboardButtonPollType {
   type?: string
-}
-
-export interface ChatAdministratorRights {
-  is_anonymous?: boolean
-  can_manage_chat?: boolean
-  can_delete_messages?: boolean
-  can_manage_video_chats?: boolean
-  can_restrict_members?: boolean
-  can_promote_members?: boolean
-  can_change_info?: boolean
-  can_invite_users?: boolean
-  can_post_messages?: boolean
-  can_edit_messages?: boolean
-  can_pin_messages?: boolean
-  can_manage_topics?: boolean
 }
 
 export interface ReplyKeyboardRemove {
@@ -849,27 +356,24 @@ export interface ReplyKeyboardRemove {
 
 export interface ForceReply {
   force_reply: true
-  input_field_placeholder?: string
   selective?: boolean
+  input_field_placeholder?: string
 }
 
 export interface SendMessageOptions {
   parse_mode?: "Markdown" | "MarkdownV2" | "HTML"
   entities?: MessageEntity[]
-  link_preview_options?: LinkPreviewOptions
+  disable_web_page_preview?: boolean
   disable_notification?: boolean
   protect_content?: boolean
   reply_to_message_id?: number
   allow_sending_without_reply?: boolean
   reply_markup?: InlineKeyboardMarkup | ReplyKeyboardMarkup | ReplyKeyboardRemove | ForceReply
-  message_thread_id?: number
-  business_connection_id?: string
 }
 
 export interface SendPhotoOptions extends SendMessageOptions {
   caption?: string
   caption_entities?: MessageEntity[]
-  show_caption_above_media?: boolean
 }
 
 export interface SendDocumentOptions extends SendMessageOptions {
@@ -947,6 +451,7 @@ export class TelegramBot extends EventEmitter {
   constructor(token: string, options?: BotOptions)
 
   request(method: string, params?: any, formData?: any): Promise<any>
+  queuedRequest(method: string, params?: any, formData?: any): Promise<any>
 
   getMe(): Promise<User>
   getUpdates(params?: any): Promise<Update[]>
