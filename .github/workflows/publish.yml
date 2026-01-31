@@ -1,0 +1,68 @@
+name: Auto Publish to NPM
+
+on:
+  push:
+    paths:
+      - "package.json"
+      - "src/**"
+      - ".github/workflows/publish.yml"
+    branches:
+      - main
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Check version update
+        id: version-check
+        run: |
+          CURRENT_VERSION=$(node -pe "require('./package.json').version")
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Current Version: $CURRENT_VERSION"
+
+      - name: Publish to NPM
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        with:
+          tag_name: v${{ steps.version-check.outputs.CURRENT_VERSION }}
+          release_name: Release v${{ steps.version-check.outputs.CURRENT_VERSION }}
+          body: |
+            # 🚀 New Release v${{ steps.version-check.outputs.CURRENT_VERSION }}
+
+            Changes:
+            - Updated package.json triggered automatic build and publish
+            - Library built successfully with ESM and CJS support
+
+            **Install with:**
+            ```bash
+            npm install teh-bot@${{ steps.version-check.outputs.CURRENT_VERSION }}
+            ```
+          draft: false
+          prerelease: false
+
+      - name: Success notification
+        run: echo "✅ Published teh-bot@${{ steps.version-check.outputs.CURRENT_VERSION }} to NPM"
