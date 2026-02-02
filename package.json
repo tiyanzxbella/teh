@@ -1,6 +1,6 @@
 {
   "name": "teh-bot",
-  "version": "1.0.7-a.1",
+  "version": "1.0.7-a.2",
   "description": "Lightweight, high-performance Telegram Bot API library with zero dependencies. Supports polling, webhooks, and all Telegram Bot API methods.",
   "keywords": [
     "telegram",

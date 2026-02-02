@@ -557,10 +557,136 @@ export class TelegramBot extends EventEmitter {
   on(event: "error", listener: (error: Error) => void): this
   on(event: string, listener: (...args: any[]) => void): this
 
+  // Payment Methods
+  sendInvoice(
+    chatId: number | string,
+    title: string,
+    description: string,
+    payload: string,
+    providerToken: string,
+    currency: string,
+    prices: any[],
+    options?: any,
+  ): Promise<Message>
+  answerShippingQuery(shippingQueryId: string, ok: boolean, options?: any): Promise<boolean>
+  answerPreCheckoutQuery(preCheckoutQueryId: string, ok: boolean, options?: any): Promise<boolean>
+
+  // Games
+  sendGame(chatId: number | string, gameShortName: string, options?: any): Promise<Message>
+  setGameScore(userId: number, score: number, options?: any): Promise<Message | boolean>
+  getGameHighScores(userId: number, options?: any): Promise<any[]>
+
+  // Sticker Set Management
+  createNewStickerSet(userId: number, name: string, title: string, stickerFormat: string, stickers: any[], options?: any): Promise<boolean>
+  addStickerToSet(userId: number, name: string, sticker: any, options?: any): Promise<boolean>
+  setStickerPositionInSet(sticker: string, position: number): Promise<boolean>
+  deleteStickerFromSet(sticker: string): Promise<boolean>
+  setStickerEmojiList(sticker: string, emojiList: string[]): Promise<boolean>
+  setStickerKeywords(sticker: string, keywords?: string[]): Promise<boolean>
+  setStickerMaskPosition(sticker: string, maskPosition?: any): Promise<boolean>
+  getStickerSet(name: string): Promise<any>
+  uploadStickerFile(userId: number, sticker: any, stickerFormat: string): Promise<any>
+  replaceStickerInSet(userId: number, name: string, oldSticker: string, sticker: any): Promise<boolean>
+  deleteStickerSet(name: string): Promise<boolean>
+  setStickerSetThumbnail(name: string, userId: number, thumbnail?: any): Promise<boolean>
+  setCustomEmojiStickerSetThumbnail(name: string, customEmojiId?: string): Promise<boolean>
+  setStickerSetTitle(name: string, title: string): Promise<boolean>
+  setStickerSetDescription(name: string, description: string): Promise<boolean>
+
+  // Forum/Topic Management
+  createForumTopic(chatId: number | string, name: string, options?: any): Promise<any>
+  editForumTopic(chatId: number | string, messageThreadId: number, options?: any): Promise<boolean>
+  closeForumTopic(chatId: number | string, messageThreadId: number): Promise<boolean>
+  reopenForumTopic(chatId: number | string, messageThreadId: number): Promise<boolean>
+  deleteForumTopic(chatId: number | string, messageThreadId: number): Promise<boolean>
+  unpinAllForumTopicMessages(chatId: number | string, messageThreadId: number): Promise<boolean>
+  editGeneralForumTopic(chatId: number | string, name: string): Promise<boolean>
+  closeGeneralForumTopic(chatId: number | string): Promise<boolean>
+  reopenGeneralForumTopic(chatId: number | string): Promise<boolean>
+  hideGeneralForumTopic(chatId: number | string): Promise<boolean>
+  unhideGeneralForumTopic(chatId: number | string): Promise<boolean>
+  getForumTopicIconStickers(): Promise<any[]>
+
+  // User Permissions & Rights Management
+  setDefaultAdministratorRights(options?: any): Promise<boolean>
+  getDefaultAdministratorRights(forChannels?: boolean): Promise<any>
+  setDefaultChatMenuButton(options?: any): Promise<boolean>
+  getDefaultChatMenuButton(): Promise<any>
+  setChatMenuButton(chatId?: number | string | null, options?: any): Promise<boolean>
+  getChatMenuButton(chatId?: number | string | null): Promise<any>
+
+  // Chat Invite Links Management
+  createChatInviteLink(chatId: number | string, options?: any): Promise<ChatInviteLink>
+  editChatInviteLink(chatId: number | string, inviteLink: string, options?: any): Promise<ChatInviteLink>
+  revokeChatInviteLink(chatId: number | string, inviteLink: string): Promise<ChatInviteLink>
+  approveChatJoinRequest(chatId: number | string, userId: number): Promise<boolean>
+  declineChatJoinRequest(chatId: number | string, userId: number): Promise<boolean>
+
+  // Chat Boost Management
+  getUserChatBoosts(chatId: number | string, userId: number): Promise<any>
+  getAvailableGifts(): Promise<any[]>
+  sendGift(userId: number, giftId: string, options?: any): Promise<boolean>
+
+  // Message Reactions
+  setMessageReaction(chatId: number | string, messageId: number, reaction?: any[], options?: any): Promise<boolean>
+  getAvailableReactions(): Promise<any[]>
+
+  // Media Group & Carousel
+  sendMediaGroup(chatId: number | string, media: any[], options?: any): Promise<Message[]>
+
+  // Scheduled Messages
+  sendScheduledMessage(chatId: number | string, content: string | SendMediaContent, timestamp: number, options?: any): Promise<Message>
+  getScheduledMessages(chatId: number | string): Promise<Message[]>
+  deleteScheduledMessage(chatId: number | string, messageId: number): Promise<boolean>
+
+  // User Profile Photos
+  getUserProfilePhotos(userId: number, options?: any): Promise<any>
+  setUserProfilePhoto(userId: number, photo: any, options?: any): Promise<boolean>
+  deleteUserProfilePhoto(userId: number, photoId: string): Promise<boolean>
+
+  // Commands Management
+  setMyCommands(commands: any[], options?: any): Promise<boolean>
+  deleteMyCommands(options?: any): Promise<boolean>
+  getMyCommands(options?: any): Promise<any[]>
+  setMyDefaultAdministratorRights(options?: any): Promise<boolean>
+  getMyDefaultAdministratorRights(options?: any): Promise<any>
+
+  // Webhook Management
+  setWebhookCertificate(url: string, certificate: any, options?: any): Promise<boolean>
+  setWebhookIpAddress(ipAddress: string): Promise<boolean>
+
+  // Business Connections
+  getBusinessConnection(businessConnectionId: string): Promise<any>
+
+  // Web App Features
+  sendWebAppData(webAppQueryId: string, data: string): Promise<boolean>
+
+  // Commands Scoping
+  setMyCommandsScope(commands: any[], scope: any, options?: any): Promise<boolean>
+  getMyCommandsScope(scope: any): Promise<any[]>
+
+  // Telegram Passport
+  setPassportDataErrors(userId: number, errors: any[]): Promise<boolean>
+
+  // Inline Query Result Helpers
+  static InlineQueryResult: {
+    article: (id: string, title: string, description: string, content: any) => any
+    photo: (id: string, photoUrl: string, thumbUrl: string) => any
+    gif: (id: string, gifUrl: string, thumbUrl: string) => any
+    video: (id: string, videoUrl: string, mimeType: string, thumbUrl: string, title: string) => any
+    audio: (id: string, audioUrl: string, title: string) => any
+    voice: (id: string, voiceUrl: string, title: string) => any
+    document: (id: string, documentUrl: string, title: string, mimeType: string) => any
+  }
+
+  // Rate Limiting & Retry Logic
+  _executeWithRetry(method: string, params: any, maxRetries?: number): Promise<any>
+
   static InlineKeyboard(): InlineKeyboardBuilder
   static ReplyKeyboard(): ReplyKeyboardBuilder
   static RemoveKeyboard(): ReplyKeyboardRemove
   static ForceReply(): ForceReply
 }
+
 
 export default TelegramBot

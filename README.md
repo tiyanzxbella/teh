@@ -25,6 +25,13 @@ A **zero-dependency**, lightweight, high-performance Telegram Bot API library fo
 - ✅ **Full Telegram Bot API Support** - All official methods with latest features
 - ✅ **Payment Integration** - Invoices, shipping queries, pre-checkout queries
 - ✅ **Advanced Features** - Reactions, stories, giveaways, business connections, web apps
+- ✅ **Games Support** - Send games, set scores, get high scores
+- ✅ **Sticker Management** - Complete sticker set API
+- ✅ **Forum/Topics** - Create and manage forum topics
+- ✅ **Gifts & Boosts** - Chat boosts and gift management
+- ✅ **Message Reactions** - React to messages with emoji
+- ✅ **Scheduled Messages** - Send messages at specific times
+- ✅ **Rate Limiting** - Built-in retry logic with exponential backoff
 
 ## 📦 Installation
 
@@ -176,6 +183,10 @@ console.log('Pending updates:', webhookInfo.pending_update_count);
 
 // Delete webhook (revert to polling)
 await bot.deleteWebhook();
+
+// Webhook Management - Advanced
+await bot.setWebhookCertificate('https://example.com/webhook', certificate);
+await bot.setWebhookIpAddress('192.168.1.1');
 ```
 
 ---
@@ -346,6 +357,18 @@ await bot.sendSticker(chatId, 'https://example.com/sticker.webp');
 
 // Send from local file
 await bot.sendSticker(chatId, './sticker.tgs');
+```
+
+#### Media Groups
+```javascript
+// Send multiple media at once
+const media = [
+  { type: 'photo', media: 'photo1.jpg', caption: 'First photo' },
+  { type: 'photo', media: 'photo2.jpg', caption: 'Second photo' },
+  { type: 'video', media: 'video.mp4', caption: 'A video' },
+];
+
+await bot.sendMediaGroup(chatId, media);
 ```
 
 ---
@@ -527,22 +550,15 @@ await bot.deleteMessage(chatId, messageId);
 #### Send Invoice
 ```javascript
 // Create product invoice
-await bot.sendInvoice(chatId, {
-  title: 'Telegram Premium',
-  description: 'Upgrade to Telegram Premium for more features!',
-  payload: 'premium_subscription_12345',
-  provider_token: 'your_stripe_token',
-  currency: 'USD',
-  prices: [
-    { label: 'Premium 1 Month', amount: 999 }, // Amount in cents
-    { label: 'Premium 3 Months', amount: 2499 }
-  ],
+await bot.sendInvoice(chatId, 'Telegram Premium', 'Upgrade to Telegram Premium!', 'premium_subscription_12345', 'your_stripe_token', 'USD', [
+  { label: 'Premium 1 Month', amount: 999 },
+  { label: 'Premium 3 Months', amount: 2499 }
+], {
   photo_url: 'https://example.com/premium.jpg',
   photo_width: 800,
   photo_height: 600,
   need_email: true,
-  need_phone_number: true,
-  send_phone_number_to_provider: true
+  need_phone_number: true
 });
 ```
 
@@ -554,19 +570,18 @@ bot.on('shipping_query', async (query, ctx) => {
       id: 'standard',
       title: 'Standard Delivery',
       price_list: [
-        { label: 'Shipping', amount: 500 }  // 5.00 USD
+        { label: 'Shipping', amount: 500 }
       ]
     },
     {
       id: 'express',
       title: 'Express Delivery',
       price_list: [
-        { label: 'Shipping', amount: 1500 }  // 15.00 USD
+        { label: 'Shipping', amount: 1500 }
       ]
     }
   ];
 
-  // Check if shipping address is valid
   const isValid = query.shipping_address.country_code === 'US';
 
   if (isValid) {
@@ -584,7 +599,6 @@ bot.on('shipping_query', async (query, ctx) => {
 #### Answer Pre-Checkout Query
 ```javascript
 bot.on('pre_checkout_query', async (query, ctx) => {
-  // Validate order before payment
   const isValid = validateOrder(query);
 
   if (isValid) {
@@ -611,7 +625,148 @@ bot.on('successful_payment', async (payment, ctx) => {
 
 ---
 
-### 8. Chat Management
+### 8. Games
+
+#### Send Game
+```javascript
+// Send game
+await bot.sendGame(chatId, 'my_game');
+```
+
+#### Set Game Score
+```javascript
+// Set game score for a user
+await bot.setGameScore(userId, 100, {
+  chat_id: chatId,
+  message_id: messageId,
+});
+```
+
+#### Get High Scores
+```javascript
+// Get high scores
+const scores = await bot.getGameHighScores(userId);
+console.log('High scores:', scores);
+```
+
+---
+
+### 9. Sticker Management
+
+#### Create Sticker Set
+```javascript
+// Create new sticker set
+await bot.createNewStickerSet(userId, 'my_stickers', 'My Stickers', 'regular', stickers, {
+  png_sticker: stickerFile
+});
+```
+
+#### Manage Stickers
+```javascript
+// Add sticker to set
+await bot.addStickerToSet(userId, 'my_stickers', sticker);
+
+// Set sticker emoji list
+await bot.setStickerEmojiList(stickerFileId, ['😀', '😂']);
+
+// Set sticker keywords
+await bot.setStickerKeywords(stickerFileId, ['happy', 'laugh']);
+
+// Set sticker mask position
+await bot.setStickerMaskPosition(stickerFileId, maskPosition);
+
+// Get sticker set info
+const set = await bot.getStickerSet('my_stickers');
+
+// Set sticker position in set
+await bot.setStickerPositionInSet(stickerFileId, 0);
+
+// Delete sticker from set
+await bot.deleteStickerFromSet(stickerFileId);
+
+// Upload sticker file
+const uploadedFile = await bot.uploadStickerFile(userId, stickerFile, 'static');
+
+// Replace sticker in set
+await bot.replaceStickerInSet(userId, 'my_stickers', oldSticker, newSticker);
+```
+
+#### Sticker Set Operations
+```javascript
+// Set sticker set thumbnail
+await bot.setStickerSetThumbnail('my_stickers', userId, thumbnail);
+
+// Set custom emoji sticker set thumbnail
+await bot.setCustomEmojiStickerSetThumbnail('my_stickers', customEmojiId);
+
+// Set sticker set title
+await bot.setStickerSetTitle('my_stickers', 'New Title');
+
+// Set sticker set description
+await bot.setStickerSetDescription('my_stickers', 'My awesome stickers');
+
+// Delete sticker set
+await bot.deleteStickerSet('my_stickers');
+```
+
+---
+
+### 10. Forum/Topic Management
+
+#### Create and Edit Topics
+```javascript
+// Create forum topic
+const topic = await bot.createForumTopic(chatId, 'Topic Name', {
+  icon_color: 16711680,
+  icon_custom_emoji_id: 'custom_emoji_id'
+});
+
+// Edit forum topic
+await bot.editForumTopic(chatId, topic.message_thread_id, {
+  name: 'New Name',
+  icon_custom_emoji_id: 'new_emoji_id'
+});
+```
+
+#### Topic Control
+```javascript
+// Close topic
+await bot.closeForumTopic(chatId, messageThreadId);
+
+// Reopen topic
+await bot.reopenForumTopic(chatId, messageThreadId);
+
+// Delete topic
+await bot.deleteForumTopic(chatId, messageThreadId);
+
+// Unpin all messages in topic
+await bot.unpinAllForumTopicMessages(chatId, messageThreadId);
+```
+
+#### General Forum Topic
+```javascript
+// Edit general forum topic
+await bot.editGeneralForumTopic(chatId, 'General');
+
+// Close general forum topic
+await bot.closeGeneralForumTopic(chatId);
+
+// Reopen general forum topic
+await bot.reopenGeneralForumTopic(chatId);
+
+// Hide general forum topic
+await bot.hideGeneralForumTopic(chatId);
+
+// Unhide general forum topic
+await bot.unhideGeneralForumTopic(chatId);
+
+// Get forum topic icon stickers
+const stickers = await bot.getForumTopicIconStickers();
+```
+
+---
+
+### 11. Chat Management
 
 #### Get Chat Information
 ```javascript
@@ -650,14 +805,11 @@ await bot.setChatPhoto(chatId, './group_photo.jpg');
 
 // Delete chat photo
 await bot.deleteChatPhoto(chatId);
-
-// Get chat member info
-const member = await bot.getChatMember(chatId, userId);
 ```
 
 ---
 
-### 9. Member Management
+### 12. Member Management
 
 #### Restrict/Promote Members
 ```javascript
@@ -667,7 +819,7 @@ await bot.restrictChatMember(chatId, userId, {
   can_send_media_messages: false,
   can_send_polls: false,
   can_add_web_page_previews: false,
-  until_date: Math.floor(Date.now() / 1000) + 86400  // 24 hours
+  until_date: Math.floor(Date.now() / 1000) + 86400
 });
 
 // Partially restrict (allow only text)
@@ -696,8 +848,8 @@ await bot.setChatAdministratorCustomTitle(chatId, userId, 'Cool Admin');
 ```javascript
 // Ban member
 await bot.banChatMember(chatId, userId, {
-  until_date: Math.floor(Date.now() / 1000) + 604800,  // 7 days
-  revoke_messages: true  // Delete all their messages
+  until_date: Math.floor(Date.now() / 1000) + 604800,
+  revoke_messages: true
 });
 
 // Permanent ban
@@ -711,7 +863,7 @@ await bot.unbanChatMember(chatId, userId, {
 });
 ```
 
-#### Other Member Operations
+#### Join Requests
 ```javascript
 // Approve join request
 await bot.approveChatJoinRequest(chatId, userId);
@@ -725,12 +877,12 @@ await bot.leaveChat(chatId);
 
 ---
 
-### 10. Message Pinning
+### 13. Message Pinning
 
 ```javascript
 // Pin message (all members see it)
 await bot.pinChatMessage(chatId, messageId, {
-  disable_notification: false  // Notify members
+  disable_notification: false
 });
 
 // Unpin specific message
@@ -744,7 +896,244 @@ await bot.unpinAllChatMessages(chatId);
 
 ---
 
-### 11. Queries & Responses
+### 14. Message Reactions
+
+#### Set Message Reaction
+```javascript
+// Set message reaction with emoji
+await bot.setMessageReaction(chatId, messageId, [
+  { type: 'emoji', emoji: '👍' }
+]);
+
+// Set multiple reactions
+await bot.setMessageReaction(chatId, messageId, [
+  { type: 'emoji', emoji: '❤️' },
+  { type: 'emoji', emoji: '🔥' }
+], { is_big: true });
+```
+
+#### Get Available Reactions
+```javascript
+// Get available reactions
+const reactions = await bot.getAvailableReactions();
+console.log('Available reactions:', reactions);
+```
+
+---
+
+### 15. Chat Invite Links
+
+#### Create Invite Links
+```javascript
+// Create invite link
+const link = await bot.createChatInviteLink(chatId, {
+  expire_date: Math.floor(Date.now() / 1000) + 86400,
+  member_limit: 5,
+  name: 'Special Link'
+});
+
+console.log('Invite link:', link.invite_link);
+```
+
+#### Edit Invite Links
+```javascript
+// Edit invite link
+await bot.editChatInviteLink(chatId, link.invite_link, {
+  expire_date: Math.floor(Date.now() / 1000) + 172800,
+  member_limit: 10,
+  name: 'Updated Link'
+});
+
+// Revoke invite link
+await bot.revokeChatInviteLink(chatId, link.invite_link);
+```
+
+---
+
+### 16. Chat Boosts & Gifts
+
+#### User Boosts
+```javascript
+// Get user chat boosts
+const boosts = await bot.getUserChatBoosts(chatId, userId);
+console.log('User boosts:', boosts);
+```
+
+#### Gift Management
+```javascript
+// Get available gifts
+const gifts = await bot.getAvailableGifts();
+
+// Send gift to user
+await bot.sendGift(userId, giftId, {
+  text: 'Enjoy your gift!',
+  text_parse_mode: 'HTML'
+});
+```
+
+---
+
+### 17. User Permissions & Rights
+
+#### Administrator Rights
+```javascript
+// Set default administrator rights
+await bot.setDefaultAdministratorRights({
+  can_manage_chat: true,
+  can_delete_messages: true,
+  can_restrict_members: true,
+  can_pin_messages: true,
+  is_anonymous: false
+});
+
+// Get default admin rights
+const rights = await bot.getDefaultAdministratorRights();
+
+// Get default admin rights for channels
+const channelRights = await bot.getDefaultAdministratorRights(true);
+
+// Set my default admin rights
+await bot.setMyDefaultAdministratorRights({
+  can_manage_chat: true,
+  can_delete_messages: true
+});
+
+// Get my default admin rights
+const myRights = await bot.getMyDefaultAdministratorRights();
+```
+
+#### Chat Menu Button
+```javascript
+// Set default chat menu button
+await bot.setDefaultChatMenuButton({
+  type: 'commands'
+});
+
+// Get default chat menu button
+const button = await bot.getDefaultChatMenuButton();
+
+// Set chat menu button for specific chat
+await bot.setChatMenuButton(chatId, {
+  type: 'web_app',
+  web_app: { url: 'https://example.com/app' }
+});
+
+// Get chat menu button
+const chatButton = await bot.getChatMenuButton(chatId);
+```
+
+---
+
+### 18. Commands Management
+
+#### Set & Get Commands
+```javascript
+// Set bot commands
+await bot.setMyCommands([
+  { command: 'start', description: 'Start the bot' },
+  { command: 'help', description: 'Show help' },
+  { command: 'settings', description: 'Open settings' }
+]);
+
+// Get bot commands
+const commands = await bot.getMyCommands();
+
+// Delete bot commands
+await bot.deleteMyCommands();
+
+// Set commands for specific scope
+await bot.setMyCommandsScope([
+  { command: 'admin', description: 'Admin commands' }
+], {
+  type: 'all_group_chats'
+});
+
+// Get commands for scope
+const scopeCommands = await bot.getMyCommandsScope({
+  type: 'all_group_chats'
+});
+```
+
+---
+
+### 19. User Profile Photos
+
+#### Profile Photo Management
+```javascript
+// Get user profile photos
+const photos = await bot.getUserProfilePhotos(userId, {
+  offset: 0,
+  limit: 10
+});
+
+// Set user profile photo (admin only)
+await bot.setUserProfilePhoto(userId, photoFile);
+
+// Delete user profile photo (admin only)
+await bot.deleteUserProfilePhoto(userId, photoId);
+```
+
+---
+
+### 20. Scheduled Messages
+
+#### Schedule & Cancel Messages
+```javascript
+// Send scheduled message
+await bot.sendScheduledMessage(
+  chatId,
+  'Message to send later',
+  Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+);
+
+// Get scheduled messages
+const scheduled = await bot.getScheduledMessages(chatId);
+
+// Delete scheduled message
+await bot.deleteScheduledMessage(chatId, messageId);
+```
+
+---
+
+### 21. Web App Features
+
+#### Web App Integration
+```javascript
+// Send web app data
+await bot.sendWebAppData(webAppQueryId, 'data_from_web_app');
+```
+
+---
+
+### 22. Business Connections
+
+#### Business Connection
+```javascript
+// Get business connection
+const connection = await bot.getBusinessConnection(businessConnectionId);
+console.log('Connection:', connection);
+```
+
+---
+
+### 23. Telegram Passport
+
+#### Passport Data
+```javascript
+// Set passport data errors
+await bot.setPassportDataErrors(userId, [
+  {
+    type: 'personal_details',
+    field_name: 'first_name',
+    data_hash: 'hash...',
+    message: 'Invalid first name'
+  }
+]);
+```
+
+---
+
+### 24. Queries & Responses
 
 #### Callback Query
 ```javascript
@@ -754,7 +1143,7 @@ bot.on('callback_query', async (query, ctx) => {
   // Answer callback (shows notification or toast)
   await ctx.answerCallbackQuery({
     text: 'Button was clicked!',
-    show_alert: false  // Toast notification
+    show_alert: false
   });
 
   // Edit message
@@ -766,25 +1155,49 @@ bot.on('callback_query', async (query, ctx) => {
 ```javascript
 bot.on('inline_query', async (query, ctx) => {
   const results = [
-    {
-      type: 'article',
-      id: '1',
-      title: 'Result 1',
-      description: 'First search result',
-      input_message_content: {
-        message_text: 'Result 1 content'
-      }
-    },
-    {
-      type: 'photo',
-      id: '2',
-      photo_url: 'https://example.com/photo.jpg',
-      thumbnail_url: 'https://example.com/thumb.jpg'
-    }
+    TelegramBot.InlineQueryResult.article(
+      '1',
+      'Result 1',
+      'First search result',
+      { message_text: 'Result 1 content' }
+    ),
+    TelegramBot.InlineQueryResult.photo(
+      '2',
+      'https://example.com/photo.jpg',
+      'https://example.com/thumb.jpg'
+    ),
+    TelegramBot.InlineQueryResult.video(
+      '3',
+      'https://example.com/video.mp4',
+      'video/mp4',
+      'https://example.com/thumb.jpg',
+      'Video Title'
+    ),
+    TelegramBot.InlineQueryResult.audio(
+      '4',
+      'https://example.com/audio.mp3',
+      'Audio Title'
+    ),
+    TelegramBot.InlineQueryResult.gif(
+      '5',
+      'https://example.com/gif.gif',
+      'https://example.com/thumb.jpg'
+    ),
+    TelegramBot.InlineQueryResult.voice(
+      '6',
+      'https://example.com/voice.ogg',
+      'Voice Result'
+    ),
+    TelegramBot.InlineQueryResult.document(
+      '7',
+      'https://example.com/file.pdf',
+      'Document Title',
+      'application/pdf'
+    )
   ];
 
   await bot.answerInlineQuery(query.id, results, {
-    cache_time: 300,  // Cache 5 minutes
+    cache_time: 300,
     is_personal: false
   });
 });
@@ -800,7 +1213,7 @@ bot.on('chosen_inline_result', async (result, ctx) => {
 
 ---
 
-### 12. File Management
+### 25. File Management
 
 #### Download File
 ```javascript
@@ -830,7 +1243,7 @@ await bot.sendPhoto(chatId, buffer);
 
 ---
 
-### 13. Keyboard Builders
+### 26. Keyboard Builders
 
 #### Inline Keyboard (Buttons with Actions)
 ```javascript
@@ -838,7 +1251,7 @@ await bot.sendPhoto(chatId, buffer);
 const keyboard = TelegramBot.InlineKeyboard()
   .text('Button 1', 'callback_data_1')
   .text('Button 2', 'callback_data_2')
-  .row()  // New row
+  .row()
   .url('Visit Website', 'https://example.com')
   .url('Google', 'https://google.com')
   .row()
@@ -858,7 +1271,7 @@ const keyboard = TelegramBot.ReplyKeyboard()
   .text('Button 2')
   .row()
   .text('Button 3')
-  .oneTime()  // Disappears after use
+  .oneTime()
   .build();
 
 await bot.sendMessage(chatId, 'Select an option:', {
@@ -884,7 +1297,7 @@ await bot.sendMessage(chatId, 'Please reply to this message:', {
 
 ---
 
-### 14. Context Helpers
+### 27. Context Helpers
 
 Context object provides convenient shortcuts:
 
@@ -1080,7 +1493,7 @@ bot.use(async (ctx, next) => {
   
   if (recentRequests.length > 30) {
     await ctx.send('Too many requests. Please wait.');
-    return;  // Don't call next()
+    return;
   }
   
   await next();
@@ -1258,6 +1671,9 @@ bot.command('/promote', async (ctx) => {
 - `sendPoll()` - Send poll/quiz
 - `sendDice()` - Send dice game
 - `sendChatAction()` - Send typing indicator
+- `sendMediaGroup()` - Send multiple media
+- `sendInvoice()` - Send payment invoice
+- `sendGame()` - Send game
 
 ### Message Management
 - `forwardMessage()` - Forward message
@@ -1296,6 +1712,84 @@ bot.command('/promote', async (ctx) => {
 - `answerShippingQuery()` - Answer shipping
 - `answerPreCheckoutQuery()` - Answer pre-checkout
 
+### Games
+- `sendGame()` - Send game
+- `setGameScore()` - Set game score
+- `getGameHighScores()` - Get high scores
+
+### Sticker Management
+- `createNewStickerSet()` - Create sticker set
+- `addStickerToSet()` - Add sticker to set
+- `setStickerEmojiList()` - Set sticker emoji
+- `setStickerKeywords()` - Set sticker keywords
+- `setStickerMaskPosition()` - Set sticker mask
+- `getStickerSet()` - Get sticker set info
+- `setStickerPositionInSet()` - Set sticker position
+- `deleteStickerFromSet()` - Delete sticker
+- `uploadStickerFile()` - Upload sticker file
+- `replaceStickerInSet()` - Replace sticker
+- `setStickerSetThumbnail()` - Set thumbnail
+- `setStickerSetTitle()` - Set title
+- `setStickerSetDescription()` - Set description
+- `deleteStickerSet()` - Delete sticker set
+
+### Forum/Topics
+- `createForumTopic()` - Create forum topic
+- `editForumTopic()` - Edit forum topic
+- `closeForumTopic()` - Close topic
+- `reopenForumTopic()` - Reopen topic
+- `deleteForumTopic()` - Delete topic
+- `unpinAllForumTopicMessages()` - Unpin all in topic
+- `editGeneralForumTopic()` - Edit general topic
+- `closeGeneralForumTopic()` - Close general topic
+- `reopenGeneralForumTopic()` - Reopen general topic
+- `hideGeneralForumTopic()` - Hide general topic
+- `unhideGeneralForumTopic()` - Unhide general topic
+- `getForumTopicIconStickers()` - Get topic icon stickers
+
+### Message Reactions
+- `setMessageReaction()` - Set message reaction
+- `getAvailableReactions()` - Get available reactions
+
+### Chat Invite Links
+- `createChatInviteLink()` - Create invite link
+- `editChatInviteLink()` - Edit invite link
+- `revokeChatInviteLink()` - Revoke invite link
+
+### Chat Boosts
+- `getUserChatBoosts()` - Get user boosts
+- `getAvailableGifts()` - Get available gifts
+- `sendGift()` - Send gift
+
+### Commands
+- `setMyCommands()` - Set bot commands
+- `getMyCommands()` - Get bot commands
+- `deleteMyCommands()` - Delete bot commands
+- `setMyCommandsScope()` - Set commands for scope
+- `getMyCommandsScope()` - Get commands for scope
+
+### User Profile
+- `getUserProfilePhotos()` - Get user profile photos
+- `setUserProfilePhoto()` - Set user profile photo
+- `deleteUserProfilePhoto()` - Delete user profile photo
+
+### Scheduled Messages
+- `sendScheduledMessage()` - Send scheduled message
+- `getScheduledMessages()` - Get scheduled messages
+- `deleteScheduledMessage()` - Delete scheduled message
+
+### Administrator Rights
+- `setDefaultAdministratorRights()` - Set default admin rights
+- `getDefaultAdministratorRights()` - Get default admin rights
+- `setMyDefaultAdministratorRights()` - Set my admin rights
+- `getMyDefaultAdministratorRights()` - Get my admin rights
+
+### Chat Menu
+- `setDefaultChatMenuButton()` - Set default menu button
+- `getDefaultChatMenuButton()` - Get default menu button
+- `setChatMenuButton()` - Set chat menu button
+- `getChatMenuButton()` - Get chat menu button
+
 ### Query Responses
 - `answerCallbackQuery()` - Answer button click
 - `answerInlineQuery()` - Answer inline query
@@ -1308,6 +1802,15 @@ bot.command('/promote', async (ctx) => {
 - `setWebhook()` - Set webhook URL
 - `deleteWebhook()` - Delete webhook
 - `getWebhookInfo()` - Get webhook info
+- `setWebhookCertificate()` - Set webhook certificate
+- `setWebhookIpAddress()` - Set webhook IP
+
+### Business & Web
+- `getBusinessConnection()` - Get business connection
+- `sendWebAppData()` - Send web app data
+
+### Passport
+- `setPassportDataErrors()` - Set passport errors
 
 ### Bot
 - `getMe()` - Get bot info
@@ -1317,6 +1820,9 @@ bot.command('/promote', async (ctx) => {
 - `startWebhook()` - Start webhook server
 - `stopWebhook()` - Stop webhook server
 
+### Advanced
+- `_executeWithRetry()` - Execute with auto-retry
+
 ---
 
 ## 💡 Best Practices
@@ -1325,7 +1831,6 @@ bot.command('/promote', async (ctx) => {
 ```javascript
 bot.on('text', async (message, ctx) => {
   try {
-    // Your code here
     await ctx.send('Hello!');
   } catch (error) {
     console.error('Error:', error);
