@@ -1,7 +1,7 @@
 const https = require("https")
 const http = require("http")
 const { EventEmitter } = require("events")
-const { createReadStream, statSync, createWriteStream, promises: fsPromises } = require("fs")
+const { createReadStream, statSync, createWriteStream } = require("fs")
 const { basename, extname } = require("path")
 const { URL } = require("url")
 const { Stream, Readable } = require("stream")
